@@ -93,9 +93,32 @@ try:
         # Fikstür görünümü
         st.table(filtreli_fikstur[['Grup', 'Ev_Sahibi', 'Ev_Skor', 'Dep_Skor', 'Deplasman', 'Maç Tarihi']])
 
-    with tab3:
-        st.info("Grup maçları tamamlandığında, her grubun ilk 2 takımı otomatik olarak buraya düşecek.")
+   with tab3:
+        st.write("### ⚔️ Son 16 Turu Eşleşmeleri")
+        
+        # Grupların ilk 2 takımı alalım
+        ilk_ikiler = {}
+        for g in gruplar:
+            siralam = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False)
+            if len(siralam) >= 2:
+                ilk_ikiler[g] = {
+                    'birinci': siralam.iloc[0]['Takım'],
+                    'ikinci': siralam.iloc[1]['Takım']
+                }
 
+        # Eşleşme Şablonu (Örn: A1-B2, B1-A2 gibi...)
+        if len(ilk_ikiler) >= 2:
+            col_e1, col_e2 = st.columns(2)
+            
+            with col_e1:
+                st.info(f"🏟️ **Maç 1:** {ilk_ikiler.get('A', {'birinci': 'A1'})['birinci']}  **vs** {ilk_ikiler.get('B', {'ikinci': 'B2'})['ikinci']}")
+                st.info(f"🏟️ **Maç 2:** {ilk_ikiler.get('C', {'birinci': 'C1'})['birinci']}  **vs** {ilk_ikiler.get('D', {'ikinci': 'D2'})['ikinci']}")
+
+            with col_e2:
+                st.info(f"🏟️ **Maç 3:** {ilk_ikiler.get('B', {'birinci': 'B1'})['birinci']}  **vs** {ilk_ikiler.get('A', {'ikinci': 'A2'})['ikinci']}")
+                st.info(f"🏟️ **Maç 4:** {ilk_ikiler.get('D', {'birinci': 'D1'})['birinci']}  **vs** {ilk_ikiler.get('C', {'ikinci': 'C2'})['ikinci']}")
+        else:
+            st.warning("Grup maçları tamamlandığında eşleşmeler burada belirecek.")
 except Exception as e:
     st.error(f"Hata: {e}")
     st.info("Lütfen Excel dosyanızın 'fikstür' ve 'Sheet1' sayfalarının doğru olduğundan emin olun.")
