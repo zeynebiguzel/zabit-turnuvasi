@@ -93,7 +93,7 @@ try:
         # Fikstür görünümü
         st.table(filtreli_fikstur[['Grup', 'Ev_Sahibi', 'Ev_Skor', 'Dep_Skor', 'Deplasman', 'Maç Tarihi']])
 
-   with tab3:
+    with tab3:
         st.write("### ⚔️ Son 16 Turu Eşleşmeleri")
         
         # Grupların ilk 2 takımı alalım
