@@ -108,7 +108,7 @@ if guncel_takimlar is not None:
                             use_container_width=True,
                             hide_index=False
                         )
-                        st.caption("Son 16 turuna yükselir.")
+                        st.caption(" 🟢 Son 16 turuna yükselir.")
 
     with tab2:
         df_fikstur['Maç Tarihi'] = df_fikstur['Maç Tarihi'].astype(str)
