@@ -88,7 +88,7 @@ st.title("🏆 Zabıta Dairesi Başkanlığı Turnuvası")
 guncel_takimlar, df_fikstur = verileri_hazirla()
 
 if guncel_takimlar is not None:
-    tab1, tab2, tab3 = st.tabs(["📊 PUAN DURUMU", "📅 FİKSTÜR", "⚔️ SON 16"])
+    tab1, tab2, tab3 = st.tabs(["PUAN DURUMU", "FİKSTÜR", "SON 16"])
 
     with tab1:
         gruplar = sorted(guncel_takimlar['Grup'].unique())
@@ -107,7 +107,7 @@ if guncel_takimlar is not None:
                             use_container_width=True,
                             hide_index=True
                         )
-                        st.caption("🟢 İlk iki sıra son 16 turuna yükselir.")
+                        st.caption("🟢 Son 16 turuna yükselir.")
 
     with tab2:
         df_fikstur['Maç Tarihi'] = df_fikstur['Maç Tarihi'].astype(str)
@@ -131,12 +131,12 @@ if guncel_takimlar is not None:
                 """, unsafe_allow_html=True)
 
     with tab3:
-        st.write("### 🏆 Genel Puan Durumu (Top 32)")
+        st.write("###  Genel Puan Durumu ")
         genel_tablo = guncel_takimlar.sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
         
         def genel_renklendir(df):
             styles = pd.DataFrame('', index=df.index, columns=df.columns)
-            styles.iloc[0:16, :] = 'background-color: #d4edda;'
+            styles.iloc[1:16, :] = 'background-color: #d4edda;'
             return styles
 
         st.dataframe(
@@ -147,18 +147,18 @@ if guncel_takimlar is not None:
         st.success("ℹ️ Yeşil bölgedeki takımlar bir üst tura yükselir.")
 
         st.write("---")
-        st.write("### ⚔️ Otomatik Eşleşmeler")
+        st.write("### Otomatik Eşleşmeler")
         ilk_ikiler = {}
         for g in gruplar:
             siralam = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False)
             if len(siralam) >= 2:
-                ilk_ikiler[g] = {'birinci': siralam.iloc[0]['Takım'], 'ikinci': siralam.iloc[1]['Takım']}
+                ilk_ikiler[g] = {'birinci': siralam.iloc[1]['Takım'], 'ikinci': siralam.iloc[2]['Takım']}
 
         if len(ilk_ikiler) >= 2:
             c1, c2 = st.columns(2)
             with c1:
-                st.info(f"🏟️ A1: {ilk_ikiler.get('A', {'birinci': 'A1'})['birinci']} vs B2: {ilk_ikiler.get('B', {'ikinci': 'B2'})['ikinci']}")
-                st.info(f"🏟️ C1: {ilk_ikiler.get('C', {'birinci': 'C1'})['birinci']} vs D2: {ilk_ikiler.get('D', {'ikinci': 'D2'})['ikinci']}")
+                st.info(f"A1: {ilk_ikiler.get('A', {'birinci': 'A1'})['birinci']} vs B2: {ilk_ikiler.get('B', {'ikinci': 'B2'})['ikinci']}")
+                st.info(f"C1: {ilk_ikiler.get('C', {'birinci': 'C1'})['birinci']} vs D2: {ilk_ikiler.get('D', {'ikinci': 'D2'})['ikinci']}")
             with c2:
-                st.info(f"🏟️ B1: {ilk_ikiler.get('B', {'birinci': 'B1'})['birinci']} vs A2: {ilk_ikiler.get('A', {'ikinci': 'A2'})['ikinci']}")
-                st.info(f"🏟️ D1: {ilk_ikiler.get('D', {'birinci': 'D1'})['birinci']} vs C2: {ilk_ikiler.get('C', {'ikinci': 'C2'})['ikinci']}")
+                st.info(f"B1: {ilk_ikiler.get('B', {'birinci': 'B1'})['birinci']} vs A2: {ilk_ikiler.get('A', {'ikinci': 'A2'})['ikinci']}")
+                st.info(f"D1: {ilk_ikiler.get('D', {'birinci': 'D1'})['birinci']} vs C2: {ilk_ikiler.get('C', {'ikinci': 'C2'})['ikinci']}")
