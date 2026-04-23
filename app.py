@@ -39,7 +39,6 @@ st.markdown("""
 # 3. Yardımcı Fonksiyonlar
 def renklendir_siralam(df):
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
-    # 0 ve 1. satırlar (yani ilk iki sıra) yeşil
     styles.iloc[0:2, :] = 'background-color: #d4edda;' 
     return styles
 
@@ -47,28 +46,21 @@ def verileri_hazirla():
     try:
         sheet_id = "1PDX2QyGBvqkdtVEhZSxop-8azj1LeDv78G6zR4X1ZAw"
         sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-        
         takimlar = pd.read_excel(sheet_url, sheet_name='Sheet1')
         fikstur = pd.read_excel(sheet_url, sheet_name='fikstür')
-        
         takimlar['Takım'] = takimlar['Takım'].str.strip()
         fikstur['Ev_Sahibi'] = fikstur['Ev_Sahibi'].str.strip()
         fikstur['Deplasman'] = fikstur['Deplasman'].str.strip()
-        
         takimlar[['O', 'G', 'B', 'M', 'AG', 'YG', 'AV', 'P']] = 0
         oynanan = fikstur.dropna(subset=['Ev_Skor', 'Dep_Skor'])
-        
         for _, mac in oynanan.iterrows():
             ev, dep = mac['Ev_Sahibi'], mac['Deplasman']
             ev_g, dep_g = int(mac['Ev_Skor']), int(mac['Dep_Skor'])
-            
             e_idx = takimlar[takimlar['Takım'] == ev].index[0]
             d_idx = takimlar[takimlar['Takım'] == dep].index[0]
-            
             takimlar.at[e_idx, 'O'] += 1; takimlar.at[d_idx, 'O'] += 1
             takimlar.at[e_idx, 'AG'] += ev_g; takimlar.at[e_idx, 'YG'] += dep_g
             takimlar.at[d_idx, 'AG'] += dep_g; takimlar.at[d_idx, 'YG'] += ev_g
-            
             if ev_g > dep_g:
                 takimlar.at[e_idx, 'G'] += 1; takimlar.at[e_idx, 'P'] += 3; takimlar.at[d_idx, 'M'] += 1
             elif dep_g > ev_g:
@@ -76,7 +68,6 @@ def verileri_hazirla():
             else:
                 takimlar.at[e_idx, 'B'] += 1; takimlar.at[d_idx, 'B'] += 1
                 takimlar.at[e_idx, 'P'] += 1; takimlar.at[d_idx, 'P'] += 1
-                
         takimlar['AV'] = takimlar['AG'] - takimlar['YG']
         return takimlar, fikstur
     except Exception as e:
@@ -100,8 +91,6 @@ if guncel_takimlar is not None:
                     with col:
                         st.markdown(f'<div class="grup-baslik">GRUP {g}</div>', unsafe_allow_html=True)
                         g_df = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
-                        
-                        # Tabloyu 1'den başlatma
                         g_df.index += 1
                         st.dataframe(
                             g_df[['Takım', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(renklendir_siralam, axis=None),
@@ -111,26 +100,25 @@ if guncel_takimlar is not None:
                         st.caption(" 🟢 Son 16 turuna yükselir.")
 
     with tab2:
-        # Tarih formatını Gün.Ay.Yıl (DD.MM.YYYY) şekline getiriyoruz
-        # errors='coerce' hatalı tarih girişlerini engeller
+        # Tarih formatını Gün.Ay.Yıl şekline getiriyoruz
         df_fikstur['Maç Tarihi'] = pd.to_datetime(df_fikstur['Maç Tarihi'], errors='coerce').dt.strftime('%d.%m.%Y')
-        
-        # 'nan' (boş) olan tarihleri temizleyelim ki hata vermesin
         tarihler = df_fikstur['Maç Tarihi'].dropna().unique()
 
-            for tarih in tarihler:
-            # Buradan sonrası aynı kalacak...
-                 st.markdown(f'<div class="fikstur-tarih">{tarih}</div>', unsafe_allow_html=True)
+        for tarih in tarihler:
+            st.markdown(f'<div class="fikstur-tarih">{tarih}</div>', unsafe_allow_html=True)
+            gunun_maclari = df_fikstur[df_fikstur['Maç Tarihi'] == tarih]
             
             for _, mac in gunun_maclari.iterrows():
-                skor = f"{int(mac['Ev_Skor'])} - {int(mac['Dep_Skor'])}" if pd.notna(mac['Ev_Skor']) else "v"
-                ms_durumu = "MS" if pd.notna(mac['Ev_Skor']) else "--"
+                ev_skor = int(mac['Ev_Skor']) if pd.notna(mac['Ev_Skor']) else None
+                dep_skor = int(mac['Dep_Skor']) if pd.notna(mac['Dep_Skor']) else None
+                skor_metni = f"{ev_skor} - {dep_skor}" if ev_skor is not None else "v"
+                ms_durumu = "MS" if ev_skor is not None else "--"
                 
                 st.markdown(f"""
                     <div class="mac-kart">
                         <span class="ms-etiket">{ms_durumu}</span>
                         <div class="takim-isim" style="text-align:right;">{mac['Ev_Sahibi']}</div>
-                        <div class="skor-kutu">{skor}</div>
+                        <div class="skor-kutu">{skor_metni}</div>
                         <div class="takim-isim" style="text-align:left;">{mac['Deplasman']}</div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -138,13 +126,10 @@ if guncel_takimlar is not None:
     with tab3:
         st.write("### Genel Puan Durumu")
         genel_tablo = guncel_takimlar.sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
-        
-        # Sıralamayı 1'den başlat
         genel_tablo.index += 1
 
         def genel_renklendir(df):
             styles = pd.DataFrame('', index=df.index, columns=df.columns)
-            # 0'dan 16'ya kadar (yani ilk 16 satır) yeşil
             styles.iloc[0:16, :] = 'background-color: #d4edda;'
             return styles
 
@@ -159,10 +144,9 @@ if guncel_takimlar is not None:
         st.write("### Otomatik Eşleşmeler")
         ilk_ikiler = {}
         for g in gruplar:
-            siralam = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
-            if len(siralam) >= 2:
-                # 0: birinci, 1: ikinci (Daha önce 1 ve 2 yapmıştın, o yüzden kaymıştı)
-                ilk_ikiler[g] = {'birinci': siralam.iloc[0]['Takım'], 'ikinci': siralam.iloc[1]['Takım']}
+            siralam_grup = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
+            if len(siralam_grup) >= 2:
+                ilk_ikiler[g] = {'birinci': siralam_grup.iloc[0]['Takım'], 'ikinci': siralam_grup.iloc[1]['Takım']}
 
         if len(ilk_ikiler) >= 2:
             c1, c2 = st.columns(2)
