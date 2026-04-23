@@ -104,8 +104,13 @@ if guncel_takimlar is not None:
                         st.markdown(f'<div class="grup-baslik">GRUP {g}</div>', unsafe_allow_html=True)
                         g_df = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
                         g_df.index += 1 # 1'den başlasın
-                        st.table(g_df[['Takım', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(renklendir_siralam, axis=None))
-                        st.caption("🟢 İlk 2 sıra Son 16 turuna yükselir.")
+                        # st.table yerine bunu yapıştır:
+                        st.dataframe(
+                            grup_df[['Takım', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(renklendir_siralam, axis=None),
+                            use_container_width=True, # Sayfayı tam kaplasın
+                            hide_index=True           # Yandaki numaraları gizlesin, daha temiz durur
+                        )
+                        st.caption("🟢 Son 16 turuna yükselir.")
 
     with tab2:
         # FİKSTÜRÜ TARİHE GÖRE GRUPLAYALIM
