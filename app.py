@@ -114,8 +114,42 @@ if guncel_takimlar is not None:
                         <div class="takim-isim" style="text-align:left;">{mac['Deplasman']}</div>
                     </div>
                 """, unsafe_allow_html=True)
-
     with tab3:
-        st.write("### ⚔️ Son 16 Turu Eşleşmeleri")
-        # (Buradaki Son 16 kodunu önceki gibi koruyabilirsin, yer darlığından özet geçiyorum)
-        st.info("Grup aşaması sonuçlarına göre eşleşmeler otomatik belirlenir.")
+        st.write("### 🏆 Genel Puan Durumu (Top 32)")
+        
+        # Tüm takımları tek bir listede toplayalım
+        genel_tablo = guncel_takimlar.sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
+        genel_tablo.index += 1 # Sıralama 1'den başlasın
+        
+        # İlk 16'yı yeşil yapan stil fonksiyonu
+        def genel_renklendir(df):
+            styles = pd.DataFrame('', index=df.index, columns=df.columns)
+            # İlk 16 satırın arka planını Maçkolik yeşili yap
+            styles.iloc[0:16, :] = 'background-color: #d4edda; color: #155724; font-weight: bold;'
+            return styles
+
+        # Tabloyu göster
+        st.table(genel_tablo[['Takım', 'Grup', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(genel_renklendir, axis=None))
+        
+        st.success("ℹ️ Genel tabloda ilk 16 sırada yer alan takımlar bir üst tura yükselir.")
+
+        # Alt kısma da o meşhur "Eleme Ağacı" görselini andıran eşleşmeleri koyalım
+        st.write("---")
+        st.write("### ⚔️ Otomatik Eşleşmeler")
+        
+        # Grupların kendi içindeki ilk 2'sini alalım (Klasik eşleşme kuralı için)
+        ilk_ikiler = {}
+        for g in gruplar:
+            siralam = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False)
+            if len(siralam) >= 2:
+                ilk_ikiler[g] = {'birinci': siralam.iloc[0]['Takım'], 'ikinci': siralam.iloc[1]['Takım']}
+
+        if len(ilk_ikiler) >= 2:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.info(f"🏟️ A1: {ilk_ikiler.get('A', {'birinci': 'A1'})['birinci']} vs B2: {ilk_ikiler.get('B', {'ikinci': 'B2'})['ikinci']}")
+                st.info(f"🏟️ C1: {ilk_ikiler.get('C', {'birinci': 'C1'})['birinci']} vs D1: {ilk_ikiler.get('D', {'ikinci': 'D2'})['ikinci']}")
+            with c2:
+                st.info(f"🏟️ B1: {ilk_ikiler.get('B', {'birinci': 'B1'})['birinci']} vs A2: {ilk_ikiler.get('A', {'ikinci': 'A2'})['ikinci']}")
+                st.info(f"🏟️ D1: {ilk_ikiler.get('D', {'birinci': 'D1'})['birinci']} vs C2: {ilk_ikiler.get('C', {'ikinci': 'C2'})['ikinci']}")
+   
