@@ -39,7 +39,7 @@ st.markdown("""
 # 3. Yardımcı Fonksiyonlar
 def renklendir_siralam(df):
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
-    # İlk iki satıra çok hafif yeşil arka plan
+    # 0 ve 1. satırlar (yani ilk iki sıra) yeşil
     styles.iloc[0:2, :] = 'background-color: #d4edda;' 
     return styles
 
@@ -84,7 +84,7 @@ def verileri_hazirla():
         return None, None
 
 # 4. Uygulama Başlangıcı
-st.title("🏆 Zabıta Dairesi Başkanlığı Turnuvası")
+st.title("Zabıta Dairesi Başkanlığı Turnuvası")
 guncel_takimlar, df_fikstur = verileri_hazirla()
 
 if guncel_takimlar is not None:
@@ -101,13 +101,14 @@ if guncel_takimlar is not None:
                         st.markdown(f'<div class="grup-baslik">GRUP {g}</div>', unsafe_allow_html=True)
                         g_df = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
                         
-                        # Görsel iyileştirme: DataFrame kullanımı
+                        # Tabloyu 1'den başlatma
+                        g_df.index += 1
                         st.dataframe(
                             g_df[['Takım', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(renklendir_siralam, axis=None),
                             use_container_width=True,
-                            hide_index=True
+                            hide_index=False
                         )
-                        st.caption("🟢 Son 16 turuna yükselir.")
+                        st.caption("Son 16 turuna yükselir.")
 
     with tab2:
         df_fikstur['Maç Tarihi'] = df_fikstur['Maç Tarihi'].astype(str)
@@ -131,12 +132,16 @@ if guncel_takimlar is not None:
                 """, unsafe_allow_html=True)
 
     with tab3:
-        st.write("###  Genel Puan Durumu ")
+        st.write("### Genel Puan Durumu")
         genel_tablo = guncel_takimlar.sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
         
+        # Sıralamayı 1'den başlat
+        genel_tablo.index += 1
+
         def genel_renklendir(df):
             styles = pd.DataFrame('', index=df.index, columns=df.columns)
-            styles.iloc[1:16, :] = 'background-color: #d4edda;'
+            # 0'dan 16'ya kadar (yani ilk 16 satır) yeşil
+            styles.iloc[0:16, :] = 'background-color: #d4edda;'
             return styles
 
         st.dataframe(
@@ -144,15 +149,16 @@ if guncel_takimlar is not None:
             use_container_width=True,
             hide_index=False
         )
-        st.success("ℹ️ Yeşil bölgedeki takımlar bir üst tura yükselir.")
+        st.success("Yeşil bölgedeki takımlar bir üst tura yükselir.")
 
         st.write("---")
         st.write("### Otomatik Eşleşmeler")
         ilk_ikiler = {}
         for g in gruplar:
-            siralam = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False)
+            siralam = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
             if len(siralam) >= 2:
-                ilk_ikiler[g] = {'birinci': siralam.iloc[1]['Takım'], 'ikinci': siralam.iloc[2]['Takım']}
+                # 0: birinci, 1: ikinci (Daha önce 1 ve 2 yapmıştın, o yüzden kaymıştı)
+                ilk_ikiler[g] = {'birinci': siralam.iloc[0]['Takım'], 'ikinci': siralam.iloc[1]['Takım']}
 
         if len(ilk_ikiler) >= 2:
             c1, c2 = st.columns(2)
