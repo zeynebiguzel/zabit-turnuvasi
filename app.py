@@ -45,33 +45,47 @@ def renklendir_siralam(df):
 
 def verileri_hazirla():
     try:
-        dosya = 'turnuva_verileri.xlsx'
-        takimlar = pd.read_excel(dosya, sheet_name='Sheet1')
-        fikstur = pd.read_excel(dosya, sheet_name='fikstür')
+        # Google Sheets linkini doğrudan indirme formatına çevirdik
+        sheet_id = "1PDX2QyGBvqkdtVEhZSxop-8azj1LeDv78G6zR4X1ZAw"
+        sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
+        
+        # Verileri internet üzerinden çekiyoruz
+        takimlar = pd.read_excel(sheet_url, sheet_name='Sheet1')
+        fikstur = pd.read_excel(sheet_url, sheet_name='fikstür')
+        
+        # Temizlik işlemleri
         takimlar['Takım'] = takimlar['Takım'].str.strip()
         fikstur['Ev_Sahibi'] = fikstur['Ev_Sahibi'].str.strip()
         fikstur['Deplasman'] = fikstur['Deplasman'].str.strip()
-        takimlar[['O', 'G', 'B', 'M', 'AG', 'YG', 'AV', 'P']] = 0
         
+        # Puan tablosunu sıfırdan hesapla
+        takimlar[['O', 'G', 'B', 'M', 'AG', 'YG', 'AV', 'P']] = 0
         oynanan = fikstur.dropna(subset=['Ev_Skor', 'Dep_Skor'])
+        
         for _, mac in oynanan.iterrows():
             ev, dep = mac['Ev_Sahibi'], mac['Deplasman']
             ev_g, dep_g = int(mac['Ev_Skor']), int(mac['Dep_Skor'])
+            
             e_idx = takimlar[takimlar['Takım'] == ev].index[0]
             d_idx = takimlar[takimlar['Takım'] == dep].index[0]
+            
             takimlar.at[e_idx, 'O'] += 1; takimlar.at[d_idx, 'O'] += 1
             takimlar.at[e_idx, 'AG'] += ev_g; takimlar.at[e_idx, 'YG'] += dep_g
             takimlar.at[d_idx, 'AG'] += dep_g; takimlar.at[d_idx, 'YG'] += ev_g
+            
             if ev_g > dep_g:
                 takimlar.at[e_idx, 'G'] += 1; takimlar.at[e_idx, 'P'] += 3; takimlar.at[d_idx, 'M'] += 1
             elif dep_g > ev_g:
                 takimlar.at[d_idx, 'G'] += 1; takimlar.at[d_idx, 'P'] += 3; takimlar.at[e_idx, 'M'] += 1
             else:
-                takimlar.at[e_idx, 'B'] += 1; takimlar.at[d_idx, 'B'] += 1; takimlar.at[e_idx, 'P'] += 1; takimlar.at[d_idx, 'P'] += 1
+                takimlar.at[e_idx, 'B'] += 1; takimlar.at[d_idx, 'B'] += 1
+                takimlar.at[e_idx, 'P'] += 1; takimlar.at[d_idx, 'P'] += 1
+                
         takimlar['AV'] = takimlar['AG'] - takimlar['YG']
         return takimlar, fikstur
-    except: return None, None
-
+    except Exception as e:
+        st.error(f"Google Sheets bağlantı hatası: {e}")
+        return None, None
 # 4. Uygulama Başlangıcı
 st.title("🏆 Zabıta Dairesi Başkanlığı Turnuvası")
 guncel_takimlar, df_fikstur = verileri_hazirla()
