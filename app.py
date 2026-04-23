@@ -111,12 +111,17 @@ if guncel_takimlar is not None:
                         st.caption(" 🟢 Son 16 turuna yükselir.")
 
     with tab2:
-        df_fikstur['Maç Tarihi'] = df_fikstur['Maç Tarihi'].astype(str)
-        tarihler = df_fikstur['Maç Tarihi'].unique()
+        with tab2:
+        # Tarih formatını Gün.Ay.Yıl (DD.MM.YYYY) şekline getiriyoruz
+        # errors='coerce' hatalı tarih girişlerini engeller
+        df_fikstur['Maç Tarihi'] = pd.to_datetime(df_fikstur['Maç Tarihi'], errors='coerce').dt.strftime('%d.%m.%Y')
+        
+        # 'nan' (boş) olan tarihleri temizleyelim ki hata vermesin
+        tarihler = df_fikstur['Maç Tarihi'].dropna().unique()
 
         for tarih in tarihler:
+            # Buradan sonrası aynı kalacak...
             st.markdown(f'<div class="fikstur-tarih">{tarih}</div>', unsafe_allow_html=True)
-            gunun_maclari = df_fikstur[df_fikstur['Maç Tarihi'] == tarih]
             
             for _, mac in gunun_maclari.iterrows():
                 skor = f"{int(mac['Ev_Skor'])} - {int(mac['Dep_Skor'])}" if pd.notna(mac['Ev_Skor']) else "v"
