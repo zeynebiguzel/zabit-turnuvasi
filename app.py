@@ -39,26 +39,22 @@ st.markdown("""
 # 3. Yardımcı Fonksiyonlar
 def renklendir_siralam(df):
     styles = pd.DataFrame('', index=df.index, columns=df.columns)
-    # İlk iki satıra çok hafif yeşil arka plan (Maçkolik'teki gibi)
-    styles.iloc[0:2, :] = 'background-color: #f0fff4;' 
+    # İlk iki satıra çok hafif yeşil arka plan
+    styles.iloc[0:2, :] = 'background-color: #d4edda;' 
     return styles
 
 def verileri_hazirla():
     try:
-        # Google Sheets linkini doğrudan indirme formatına çevirdik
         sheet_id = "1PDX2QyGBvqkdtVEhZSxop-8azj1LeDv78G6zR4X1ZAw"
         sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
         
-        # Verileri internet üzerinden çekiyoruz
         takimlar = pd.read_excel(sheet_url, sheet_name='Sheet1')
         fikstur = pd.read_excel(sheet_url, sheet_name='fikstür')
         
-        # Temizlik işlemleri
         takimlar['Takım'] = takimlar['Takım'].str.strip()
         fikstur['Ev_Sahibi'] = fikstur['Ev_Sahibi'].str.strip()
         fikstur['Deplasman'] = fikstur['Deplasman'].str.strip()
         
-        # Puan tablosunu sıfırdan hesapla
         takimlar[['O', 'G', 'B', 'M', 'AG', 'YG', 'AV', 'P']] = 0
         oynanan = fikstur.dropna(subset=['Ev_Skor', 'Dep_Skor'])
         
@@ -86,12 +82,13 @@ def verileri_hazirla():
     except Exception as e:
         st.error(f"Google Sheets bağlantı hatası: {e}")
         return None, None
+
 # 4. Uygulama Başlangıcı
 st.title("🏆 Zabıta Dairesi Başkanlığı Turnuvası")
 guncel_takimlar, df_fikstur = verileri_hazirla()
 
 if guncel_takimlar is not None:
-    tab1, tab2, tab3 = st.tabs(["PUAN DURUMU", "FİKSTÜR", "SON 16"])
+    tab1, tab2, tab3 = st.tabs(["📊 PUAN DURUMU", "📅 FİKSTÜR", "⚔️ SON 16"])
 
     with tab1:
         gruplar = sorted(guncel_takimlar['Grup'].unique())
@@ -103,17 +100,16 @@ if guncel_takimlar is not None:
                     with col:
                         st.markdown(f'<div class="grup-baslik">GRUP {g}</div>', unsafe_allow_html=True)
                         g_df = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
-                        g_df.index += 1 # 1'den başlasın
-                        # st.table yerine bunu yapıştır:
+                        
+                        # Görsel iyileştirme: DataFrame kullanımı
                         st.dataframe(
-                            grup_df[['Takım', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(renklendir_siralam, axis=None),
-                            use_container_width=True, # Sayfayı tam kaplasın
-                            hide_index=True           # Yandaki numaraları gizlesin, daha temiz durur
+                            g_df[['Takım', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(renklendir_siralam, axis=None),
+                            use_container_width=True,
+                            hide_index=True
                         )
-                        st.caption("🟢 Son 16 turuna yükselir.")
+                        st.caption("🟢 İlk iki sıra son 16 turuna yükselir.")
 
     with tab2:
-        # FİKSTÜRÜ TARİHE GÖRE GRUPLAYALIM
         df_fikstur['Maç Tarihi'] = df_fikstur['Maç Tarihi'].astype(str)
         tarihler = df_fikstur['Maç Tarihi'].unique()
 
@@ -133,30 +129,25 @@ if guncel_takimlar is not None:
                         <div class="takim-isim" style="text-align:left;">{mac['Deplasman']}</div>
                     </div>
                 """, unsafe_allow_html=True)
+
     with tab3:
         st.write("### 🏆 Genel Puan Durumu (Top 32)")
-        
-        # Tüm takımları tek bir listede toplayalım
         genel_tablo = guncel_takimlar.sort_values(by=['P', 'AV', 'AG'], ascending=False).reset_index(drop=True)
-        genel_tablo.index += 1 # Sıralama 1'den başlasın
         
-        # İlk 16'yı yeşil yapan stil fonksiyonu
         def genel_renklendir(df):
             styles = pd.DataFrame('', index=df.index, columns=df.columns)
-            # İlk 16 satırın arka planını Maçkolik yeşili yap
-            styles.iloc[0:16, :] = 'background-color: #d4edda; color: #155724; font-weight: bold;'
+            styles.iloc[0:16, :] = 'background-color: #d4edda;'
             return styles
 
-        # Tabloyu göster
-        st.table(genel_tablo[['Takım', 'Grup', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(genel_renklendir, axis=None))
-        
-        st.success("ℹ️ Genel tabloda ilk 16 sırada yer alan takımlar bir üst tura yükselir.")
+        st.dataframe(
+            genel_tablo[['Takım', 'Grup', 'O', 'G', 'B', 'M', 'P', 'AV']].style.apply(genel_renklendir, axis=None),
+            use_container_width=True,
+            hide_index=False
+        )
+        st.success("ℹ️ Yeşil bölgedeki takımlar bir üst tura yükselir.")
 
-        # Alt kısma da o meşhur "Eleme Ağacı" görselini andıran eşleşmeleri koyalım
         st.write("---")
         st.write("### ⚔️ Otomatik Eşleşmeler")
-        
-        # Grupların kendi içindeki ilk 2'sini alalım (Klasik eşleşme kuralı için)
         ilk_ikiler = {}
         for g in gruplar:
             siralam = guncel_takimlar[guncel_takimlar['Grup'] == g].sort_values(by=['P', 'AV', 'AG'], ascending=False)
@@ -167,8 +158,7 @@ if guncel_takimlar is not None:
             c1, c2 = st.columns(2)
             with c1:
                 st.info(f"🏟️ A1: {ilk_ikiler.get('A', {'birinci': 'A1'})['birinci']} vs B2: {ilk_ikiler.get('B', {'ikinci': 'B2'})['ikinci']}")
-                st.info(f"🏟️ C1: {ilk_ikiler.get('C', {'birinci': 'C1'})['birinci']} vs D1: {ilk_ikiler.get('D', {'ikinci': 'D2'})['ikinci']}")
+                st.info(f"🏟️ C1: {ilk_ikiler.get('C', {'birinci': 'C1'})['birinci']} vs D2: {ilk_ikiler.get('D', {'ikinci': 'D2'})['ikinci']}")
             with c2:
                 st.info(f"🏟️ B1: {ilk_ikiler.get('B', {'birinci': 'B1'})['birinci']} vs A2: {ilk_ikiler.get('A', {'ikinci': 'A2'})['ikinci']}")
                 st.info(f"🏟️ D1: {ilk_ikiler.get('D', {'birinci': 'D1'})['birinci']} vs C2: {ilk_ikiler.get('C', {'ikinci': 'C2'})['ikinci']}")
-   
